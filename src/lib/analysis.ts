@@ -153,6 +153,8 @@ export async function computeAnalysis(
   check(bearCandle, inKill ? 10 : 5, "sell");
 
   // keputusan
+  scoreBuy = Math.min(100, scoreBuy);
+  scoreSell = Math.min(100, scoreSell);
   let directionV: AnalysisResult["direction"] = "NEUTRAL";
   let strong = false;
   if (scoreBuy >= 70 && scoreBuy - scoreSell > 15) { directionV = "BUY"; strong = true; }
