@@ -1,14 +1,21 @@
 "use client";
 import { useEffect, useState } from "react";
+import { SESSION_DEFAULTS, SessionSettings } from "@/lib/sessions";
 
 export interface Settings {
   balance: number;
   riskPct: number;
   outgoing: { telegram: string; discord: string };
+  sessions: SessionSettings;
 }
 
 const KEY = "trading-ayah-settings";
-const DEFAULTS: Settings = { balance: 1000, riskPct: 1, outgoing: { telegram: "", discord: "" } };
+const DEFAULTS: Settings = {
+  balance: 1000,
+  riskPct: 1,
+  outgoing: { telegram: "", discord: "" },
+  sessions: SESSION_DEFAULTS,
+};
 
 export function useSettings(): [Settings, (s: Settings) => void] {
   const [s, setS] = useState<Settings>(DEFAULTS);

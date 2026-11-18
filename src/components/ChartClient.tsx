@@ -1,18 +1,21 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Nav from "@/components/Nav";
 import TradingChart from "@/components/TradingChart";
 import AnalysisPanel from "@/components/AnalysisPanel";
+import StrategyPanel from "@/components/StrategyPanel";
 import { useSettings } from "@/components/useSettings";
 import { alreadySent, sendOutgoing } from "@/lib/outgoing";
 import { AnalysisResult } from "@/lib/analysis";
 import { Candle } from "@/lib/market";
 import { TF, TF_LIST, TF_LABEL, MODES, Mode, DEFAULT_MODE } from "@/lib/config";
+import { STRATEGIES, StrategyId, computeStrategy } from "@/lib/strategies";
 import SessionClock from "@/components/SessionClock";
 
 export default function ChartClient({ symbol }: { symbol: string }) {
   const [tf, setTf] = useState<TF>("H1");
   const [mode, setMode] = useState<Mode>(DEFAULT_MODE);
+  const [strat, setStrat] = useState<StrategyId>("skor");
   const [candles, setCandles] = useState<Candle[]>([]);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [err, setErr] = useState("");
@@ -38,6 +41,11 @@ export default function ChartClient({ symbol }: { symbol: string }) {
   }, [symbol, tf, settings.balance, settings.riskPct]);
 
   useEffect(() => { load(); }, [load]);
+
+  const strategy = useMemo(() => {
+    if (!analysis || !candles.length) return null;
+    return computeStrategy(strat, { a: analysis, candles });
+  }, [strat, analysis, candles]);
 
   return (
     <div className="flex-1">
@@ -65,18 +73,28 @@ export default function ChartClient({ symbol }: { symbol: string }) {
           <button onClick={load} className="btn ml-auto">Perbarui</button>
         </div>
 
+        <div className="flex items-center gap-2 flex-wrap">
+          {STRATEGIES.map((s) => (
+            <button key={s.id} onClick={() => setStrat(s.id)}
+              className={`badge text-sm px-3 py-1.5 cursor-pointer ${strat === s.id ? "bg-black text-white" : "bg-neutral-100 text-neutral-600"}`}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+
         {err && (
           <div className="card p-4 text-sm text-[#c5221f]">Sumber data gagal: {err} — coba lagi sebentar.</div>
         )}
 
         <div className="card p-3">
-          <TradingChart candles={candles} />
+          <TradingChart candles={candles} strategy={strat} overlay={strategy ? strategy.chart : { emas: ["e20", "e50", "e200"], priceLines: [], markers: [] }} />
           <div className="px-2 pt-1 text-[12px] text-neutral-400">
             Sumber candle: Yahoo Finance (DELAYED) · mode: {mode}
           </div>
         </div>
 
-        {analysis && <AnalysisPanel a={analysis} balance={settings.balance} riskPct={settings.riskPct} />}
+        {strategy && strategy.id === "skor" && analysis && <AnalysisPanel a={analysis} balance={settings.balance} riskPct={settings.riskPct} />}
+        {strategy && strategy.id !== "skor" && <StrategyPanel r={strategy} balance={settings.balance} riskPct={settings.riskPct} />}
 
         {analysis?.strong && (
           <div className="flex items-center gap-3 flex-wrap">

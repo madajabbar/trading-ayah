@@ -1,16 +1,25 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { createChart, CandlestickSeries, LineSeries, ColorType, ISeriesApi } from "lightweight-charts";
+import { createChart, CandlestickSeries, LineSeries, ColorType, ISeriesApi, createSeriesMarkers, IPriceLine } from "lightweight-charts";
 import { Candle } from "@/lib/market";
 import { ema } from "@/lib/indicators";
+import { StrategyChart, StrategyId } from "@/lib/strategies";
 
-export default function TradingChart({ candles }: { candles: Candle[] }) {
+const EMA_KIND: Record<string, "e20" | "e50" | "e200"> = { e20: "e20", e50: "e50", e200: "e200" };
+
+export default function TradingChart({ candles, strategy, overlay }: {
+  candles: Candle[];
+  strategy: StrategyId;
+  overlay: StrategyChart;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
   const candleRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const e20Ref = useRef<ISeriesApi<"Line"> | null>(null);
   const e50Ref = useRef<ISeriesApi<"Line"> | null>(null);
   const e200Ref = useRef<ISeriesApi<"Line"> | null>(null);
+  const markersRef = useRef<any>(null);
+  const priceLinesRef = useRef<IPriceLine[]>([]);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -34,7 +43,8 @@ export default function TradingChart({ candles }: { candles: Candle[] }) {
     e20Ref.current = e20;
     e50Ref.current = e50;
     e200Ref.current = e200;
-    return () => { chart.remove(); chartRef.current = null; };
+    markersRef.current = createSeriesMarkers(candle);
+    return () => { chart.remove(); chartRef.current = null; candleRef.current = null; e20Ref.current = null; e50Ref.current = null; e200Ref.current = null; markersRef.current = null; };
   }, []);
 
   useEffect(() => {
@@ -50,6 +60,38 @@ export default function TradingChart({ candles }: { candles: Candle[] }) {
     e200Ref.current?.setData(mk(ema(closes, 200)));
     chartRef.current?.timeScale().fitContent();
   }, [candles]);
+
+  // terapkan overlay strategi
+  useEffect(() => {
+    const candle = candleRef.current;
+    if (!candle) return;
+
+    e20Ref.current?.applyOptions({ visible: overlay.emas.includes("e20") });
+    e50Ref.current?.applyOptions({ visible: overlay.emas.includes("e50") });
+    e200Ref.current?.applyOptions({ visible: overlay.emas.includes("e200") });
+
+    // price lines: hapus lama, buat baru
+    for (const pl of priceLinesRef.current) candle.removePriceLine(pl);
+    priceLinesRef.current = overlay.priceLines
+      .filter((pl) => pl.price > 0 && isFinite(pl.price))
+      .map((pl) => candle.createPriceLine({
+        price: pl.price,
+        color: pl.color,
+        lineWidth: (pl.width || 1) as any,
+        lineStyle: pl.dashed ? 2 : 0,
+        title: pl.title,
+        axisLabelVisible: true,
+      }));
+
+    // markers
+    markersRef.current?.setMarkers(overlay.markers.map((m) => ({
+      time: m.time as any,
+      position: m.pos,
+      shape: m.shape,
+      color: m.color,
+      text: m.text,
+    })) as unknown[]);
+  }, [overlay, candles]);
 
   return <div ref={ref} className="w-full" />;
 }

@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Trading Ayah — XAUUSD & Forex",
-  description: "Dashboard trading XAUUSD & Forex untuk Ayah",
+  title: "XAU Pro — XAUUSD & Forex",
+  description: "Sinyal Emas & Forex untuk Ayah — XAU Pro",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

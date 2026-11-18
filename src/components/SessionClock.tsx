@@ -1,10 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
-import { killZoneLabel, sessionLabel, wibClock, wibHm } from "@/lib/format";
+import { wibClock, wibHm } from "@/lib/format";
+import { sessionLabelCustom, killZoneCustom } from "@/lib/sessions";
+import { useSettings } from "@/components/useSettings";
 
 export default function SessionClock() {
   const [now, setNow] = useState("--:--:--");
   const [hm, setHm] = useState(0);
+  const [settings] = useSettings();
 
   useEffect(() => {
     const tick = () => {
@@ -16,8 +19,8 @@ export default function SessionClock() {
     return () => clearInterval(t);
   }, []);
 
-  const sesi = sessionLabel(hm);
-  const kill = killZoneLabel(hm);
+  const sesi = sessionLabelCustom(hm, settings.sessions);
+  const kill = killZoneCustom(hm, settings.sessions);
 
   return (
     <div className="flex items-center gap-3 flex-wrap">

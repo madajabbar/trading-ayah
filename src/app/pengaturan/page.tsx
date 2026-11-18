@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Nav from "@/components/Nav";
 import { useSettings } from "@/components/useSettings";
+import { SESSION_DEFAULTS, SessionSettings } from "@/lib/sessions";
 
 const TEMPLATE = `{
   "secret": "GANTI_SECRET",
@@ -40,6 +41,41 @@ export default function PengaturanPage() {
             </label>
           </div>
           <div className="text-[12px] text-neutral-400">Disimpan lokal di browser (localStorage).</div>
+        </div>
+
+        <div className="card p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="h2">Jam Sesi & Kill Zone (WIB)</h2>
+            <button onClick={() => save({ ...settings, sessions: SESSION_DEFAULTS })} className="badge text-sm cursor-pointer bg-neutral-100 text-neutral-600 hover:bg-neutral-200">
+              Reset ke Default
+            </button>
+          </div>
+          <div className="space-y-3">
+            {([
+              ["Sesi Asia", "asia"],
+              ["Sesi London", "london"],
+              ["Sesi New York", "newyork"],
+              ["Kill Zone London", "killLondon"],
+              ["Kill Zone New York", "killNewyork"],
+            ] as [string, keyof SessionSettings][]).map(([label, key]) => {
+              const r = settings.sessions[key];
+              return (
+                <div key={key} className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-neutral-600 w-36">{label}</span>
+                  <div className="flex items-center gap-2">
+                    <input type="time" value={r.start}
+                      onChange={(e) => save({ ...settings, sessions: { ...settings.sessions, [key]: { ...r, start: e.target.value } } })} />
+                    <span className="text-neutral-400">—</span>
+                    <input type="time" value={r.end}
+                      onChange={(e) => save({ ...settings, sessions: { ...settings.sessions, [key]: { ...r, end: e.target.value } } })} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="text-[12px] text-neutral-400 leading-relaxed">
+            Jam custom berlaku untuk tampilan sesi &amp; kill zone di perangkat ini; mesin skor server memakai jam default.
+          </div>
         </div>
 
         <div className="card p-6 space-y-4">

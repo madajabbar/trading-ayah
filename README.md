@@ -1,13 +1,13 @@
-# Trading Ayah
+# XAU Pro
 
-Dashboard trading **XAUUSD & Forex** untuk Ayah — desain bersih ala Apple HIG, font besar, bahasa Indonesia. Bukan HUD sci-fi neon.
+Dashboard trading **XAUUSD & Forex** untuk Ayah — desain bersih ala Apple HIG, font besar, bahasa Indonesia. Bukan HUD sci-fi neon. Tagline: _Sinyal Emas & Forex untuk Ayah_.
 
 ## Fitur
-- **Dashboard**: watchlist 6 pair (XAUUSD, EURUSD, GBPUSD, USDJPY, AUDUSD, DXY) — harga live, %ubah, skor mini, bias; jam sesi WIB live + indikator Kill Zone; banner sinyal kuat terakhir.
-- **Chart**: candlestick + EMA20/50/200, panel analisa lengkap (bias D1/HTF/chart, RSI, MACD, ATR, skor, tabel Entry/SL/TP1–3/Lot/Risiko), pemilih TF M5/M15/H1/H4/D1, mode Scalping/Intraday/Swing.
+- **Dashboard**: watchlist 6 pair (XAUUSD, EURUSD, GBPUSD, USDJPY, AUDUSD, DXY) — harga live, %ubah, skor mini, bias; jam sesi WIB live + indikator Kill Zone (jam bisa di-custom di Pengaturan); banner sinyal kuat terakhir.
+- **Chart**: candlestick + EMA20/50/200, panel analisa lengkap (bias D1/HTF/chart, RSI, MACD, ATR, skor, tabel Entry/SL/TP1–3/Lot/Risiko), pemilih TF M5/M15/H1/H4/D1, mode Scalping/Intraday/Swing, dan **strategi interaktif**: Skor Pro, Pullback Tren, Breakout-Retest, Pantulan Level — tiap strategi menyesuaikan chart & panel checklist plus Entry/SL/TP bila aktif.
 - **Sinyal**: riwayat webhook masuk + internal.
 - **Kalkulator**: kalkulator lot mandiri.
-- **Pengaturan**: saldo & risiko% (localStorage), webhook masuk (templat alert TradingView), webhook keluar Telegram/Discord.
+- **Pengaturan**: saldo & risiko% (localStorage), jam sesi & Kill Zone custom (localStorage), webhook masuk (templat alert TradingView), webhook keluar Telegram/Discord.
 
 ## Sumber Data (jujur)
 | Sumber | Dipakai untuk | Label |
@@ -38,6 +38,9 @@ Detail & verifikasi live: lihat [`HASIL_RISET_DATA.md`](HASIL_RISET_DATA.md).
 ## Webhook Keluar (Telegram/Discord)
 - Dikonfigurasi di halaman Pengaturan (tersimpan di localStorage, tidak pernah dikirim ke server).
 - Sinyal kuat baru otomatis dikirim sekali per pair per timeframe (anti-spam).
+
+## Jam Sesi Custom (catatan jujur)
+Jam sesi & Kill Zone yang diedit di Pengaturan **hanya berlaku untuk tampilan sesi & kill zone di perangkat ini** (localStorage). Mesin skor server tetap memakai jam default.
 
 ## Pengembangan
 ```bash

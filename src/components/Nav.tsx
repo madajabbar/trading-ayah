@@ -15,7 +15,10 @@ export default function Nav() {
   return (
     <header className="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-neutral-200">
       <div className="max-w-5xl mx-auto px-4 py-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <Link href="/" className="font-bold text-lg tracking-tight">Trading Ayah</Link>
+        <Link href="/" className="flex flex-col leading-tight">
+          <span className="font-bold text-lg tracking-tight">XAU Pro</span>
+          <span className="text-[11px] text-neutral-400 font-normal">Sinyal Emas & Forex untuk Ayah</span>
+        </Link>
         <nav className="flex flex-wrap items-center gap-1">
           {LINKS.map((l) => (
             <Link
