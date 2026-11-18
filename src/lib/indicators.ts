@@ -112,6 +112,107 @@ export interface Pivot {
 }
 
 /** Pivot dari candle harian (D1) */
+/** RMA / Wilder smoothing (alpha 1/period), seeding SMA of first `period` values */
+const rmaClean = (arr: number[], period: number): number[] => {
+  const n = arr.length;
+  const out = new Array(n).fill(NaN);
+  if (n < period) return out;
+  let s = 0;
+  while (s < n && !Number.isFinite(arr[s])) s++; // skip NaN prefix
+  if (n - s < period) return out;
+  let prev = 0;
+  for (let i = s; i < s + period; i++) prev += arr[i];
+  prev /= period;
+  out[s + period - 1] = prev;
+  for (let i = s + period; i < n; i++) {
+    prev = (prev * (period - 1) + arr[i]) / period;
+    out[i] = prev;
+  }
+  return out;
+};
+
+export interface QqeOut {
+  val: (number | null)[]; // rsiMa - 50
+  line: (number | null)[]; // trailing - 50
+  up: boolean[];
+}
+
+/**
+ * QQE Mod (Mihkel00). Dihitung pd array close.
+ * val = rsiMa - 50, line = trailing line - 50, up = arah trailing.
+ */
+export const qqe = (closes: number[], len = 6, sf = 5, factor = 3.0): QqeOut => {
+  const n = closes.length;
+  const out: QqeOut = {
+    val: new Array(n).fill(null),
+    line: new Array(n).fill(null),
+    up: new Array(n).fill(false),
+  };
+  if (n < len + 2) return out;
+  const rsiV = rsi(closes, len);
+  const first = rsiV.findIndex((v) => v != null);
+  if (first < 0) return out;
+  const clean: number[] = [];
+  const idx: number[] = [];
+  for (let i = first; i < n; i++) {
+    if (rsiV[i] != null) { clean.push(rsiV[i]!); idx.push(i); }
+  }
+  const eFull = ema(clean, sf);
+  const k0 = eFull.findIndex((v) => v != null);
+  if (k0 < 0) return out;
+  const M = clean.length - k0;
+  const ev: number[] = new Array(M).fill(NaN);
+  for (let i = 0; i < M; i++) ev[i] = eFull[k0 + i]!;
+  const wp = len * 2 - 1;
+  const chg: number[] = new Array(Math.max(0, M - 1)).fill(NaN);
+  for (let i = 1; i < M; i++) chg[i - 1] = Math.abs(ev[i] - ev[i - 1]);
+  const atrRsi = rmaClean(chg, wp);
+  const maAtr = rmaClean(atrRsi, wp);
+  let tl = ev[0];
+  let isUp = true;
+  let prevMa = ev[0];
+  out.val[idx[k0]] = ev[0] - 50;
+  out.line[idx[k0]] = tl - 50;
+  out.up[idx[k0]] = true;
+  for (let p = 1; p < M; p++) {
+    const ma = ev[p];
+    const delta = maAtr[p - 1] * factor;
+    if (Number.isFinite(delta)) {
+      const upper = ma + delta;
+      const lower = ma - delta;
+      const crossUp = prevMa <= tl && ma > tl;
+      const crossDown = prevMa >= tl && ma < tl;
+      if (crossUp) { isUp = true; tl = lower; }
+      else if (crossDown) { isUp = false; tl = upper; }
+      else tl = isUp ? Math.max(tl, lower) : Math.min(tl, upper);
+    }
+    prevMa = ma;
+    const candleIdx = idx[k0 + p];
+    out.val[candleIdx] = ma - 50;
+    out.line[candleIdx] = tl - 50;
+    out.up[candleIdx] = isUp;
+  }
+  return out;
+};
+
+/** Historical Volatility Indicator klasik: stdev(logRet,10)/stdev(logRet,100) */
+export const hviValue = (closes: number[]): { value: number | null; regime: string } => {
+  if (closes.length < 120) return { value: null, regime: "-" };
+  const lr: number[] = [];
+  for (let i = 1; i < closes.length; i++) lr.push(Math.log(closes[i] / closes[i - 1]));
+  if (lr.length < 100) return { value: null, regime: "-" };
+  const stdev = (a: number[]) => {
+    const m = a.reduce((x, y) => x + y, 0) / a.length;
+    return Math.sqrt(a.reduce((s, v) => s + (v - m) * (v - m), 0) / a.length);
+  };
+  const d100 = stdev(lr.slice(-100));
+  if (!d100 || !isFinite(d100)) return { value: null, regime: "-" };
+  const v = stdev(lr.slice(-10)) / d100;
+  if (!isFinite(v)) return { value: null, regime: "-" };
+  const regime = v < 0.5 ? "Kompresi" : v <= 1.0 ? "Normal" : "Ekspansi";
+  return { value: v, regime };
+};
+
 export const computePivot = (daily: Candle[]): Pivot => {
   const empty: Pivot = { pivot: 0, pdh: 0, pdl: 0, pwh: 0, pwl: 0, prevDay: null };
   if (daily.length < 2) return empty;

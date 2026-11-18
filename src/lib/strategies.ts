@@ -123,7 +123,16 @@ function pullback(ctx: Ctx, atr: number): StrategyResult {
   const conf = up ? lastC.close > lastC.open : lastC.close < lastC.open;
   const rsiHealthy = up ? a.rsi >= 40 && a.rsi <= 70 : a.rsi >= 30 && a.rsi <= 60;
 
-  const active = !!dir && htf && touch && conf && rsiHealthy;
+  const src = a.momentumSource ?? "qqe";
+  const srcLabel = src === "qqe" ? "QQE Mod" : src === "macd" ? "MACD" : "QQE + MACD";
+  const up1 = !!a.qqe?.up1;
+  const hist = a.macdHist;
+  let momPass = false;
+  if (src === "qqe") momPass = up ? up1 : !up1;
+  else if (src === "macd") momPass = up ? hist > 0 : hist < 0;
+  else momPass = up ? up1 && hist > 0 : !up1 && hist < 0;
+
+  const active = !!dir && htf && touch && conf && rsiHealthy && momPass;
   const tradeDir: "BUY" | "SELL" | null = dir === "up" ? "BUY" : dir === "down" ? "SELL" : null;
   const tp = active && tradeDir ? plan(tradeDir, price, atr) : null;
 
@@ -144,6 +153,7 @@ function pullback(ctx: Ctx, atr: number): StrategyResult {
     items: [
       { label: "Trend HTF searah", pass: htf, detail: a.bias.htf === "up" ? "HTF naik" : a.bias.htf === "down" ? "HTF turun" : "HTF datar" },
       { label: "Harga sentuh EMA20", pass: touch, detail: e20 != null ? `EMA20 ${e20.toFixed(2)}` : "EMA20 tidak ada" },
+      { label: `Momentum (${srcLabel})`, pass: momPass, detail: src === "qqe" ? `QQE ${a.qqe?.state === "bull" ? "bull" : a.qqe?.state === "bear" ? "bear" : "campur"}` : src === "macd" ? `MACD ${hist > 0 ? "positif" : hist < 0 ? "negatif" : "netral"}` : `QQE ${up1 ? "bull" : "bear"} · MACD ${hist > 0 ? "pos" : "neg"}` },
       { label: "Candle konfirmasi", pass: conf, detail: up ? "bullish tutup di atas open" : "bearish tutup di bawah open" },
       { label: "RSI sehat", pass: rsiHealthy, detail: `RSI ${a.rsi.toFixed(1)}` },
     ],

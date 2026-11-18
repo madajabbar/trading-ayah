@@ -79,6 +79,30 @@ export default function PengaturanPage() {
         </div>
 
         <div className="card p-6 space-y-4">
+          <h2 className="h2">Sumber Momentum</h2>
+          <div className="grid grid-cols-1 gap-3">
+            {([
+              ["qqe", "QQE Mod (Ayah)", "Momentum dari RSI halus — alat pilihan Ayah. Deviasi atas/bawah memicu sinyal."],
+              ["macd", "MACD", "Logika momentum lama: histogram MACD di atas/bawah sinyal."],
+              ["both", "Keduanya", "Skor penuh hanya bila QQE & MACD searah penuh; 7 bila salah satu."],
+            ] as [string, string, string][]).map(([val, label, desc]) => (
+              <label key={val} className={`flex items-start gap-3 border rounded-xl p-3 cursor-pointer ${settings.momentum === val ? "border-blue-500 bg-blue-50/40" : "border-neutral-200"}`}>
+                <input type="radio" name="momentum" className="mt-1 accent-blue-500"
+                  checked={settings.momentum === val}
+                  onChange={() => save({ ...settings, momentum: val as any })} />
+                <span className="space-y-0.5">
+                  <span className="block text-sm font-semibold">{label}</span>
+                  <span className="block text-[12px] text-neutral-500">{desc}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+          <div className="text-[12px] text-neutral-400 leading-relaxed">
+            QQE Mod = momentum dari RSI halus (alat Ayah). HVI = pengukur volatilitas pendamping ATR.
+          </div>
+        </div>
+
+        <div className="card p-6 space-y-4">
           <h2 className="h2">Webhook Masuk (TradingView)</h2>
           <div className="text-sm text-neutral-600 space-y-2">
             <p>

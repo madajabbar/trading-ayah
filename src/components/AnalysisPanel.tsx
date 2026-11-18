@@ -53,6 +53,21 @@ export default function AnalysisPanel({ a, balance, riskPct }: { a: AnalysisResu
         <Row label="PWH / PWL" value={`${fmtPrice(a.pivot.pwh)} / ${fmtPrice(a.pivot.pwl)}`} />
       </div>
 
+      <div>
+        <div className="text-[13px] font-semibold text-neutral-500 mb-1">
+          Momentum & Volatilitas (sumber: {a.momentumSource === "qqe" ? "QQE Mod" : a.momentumSource === "macd" ? "MACD" : "QQE+MACD"})
+        </div>
+        <Row
+          label="QQE Mod"
+          strong
+          value={`${fmtNum(a.qqe.val1)} · ${
+            a.qqe.state === "bull" ? "NAIK KUAT" : a.qqe.state === "bear" ? "TURUN KUAT" : "Campur"
+          }`}
+        />
+        <Row label="HVI (volatilitas historis 10/100)" value={`${a.hvi.value != null ? fmtNum(a.hvi.value, 2) : "—"} · ${a.hvi.regime}`} />
+        <Row label="Momentum poin" value={`B +${a.momentum.buy} / J +${a.momentum.sell}`} />
+      </div>
+
       {a.trade && (
         <div>
           <div className="text-[13px] font-semibold text-neutral-500 mb-1">Rencana Trade (saldo {fmtNum(balance)} · risiko {riskPct}%)</div>

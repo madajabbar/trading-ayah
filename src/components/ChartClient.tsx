@@ -11,6 +11,7 @@ import { Candle } from "@/lib/market";
 import { TF, TF_LIST, TF_LABEL, MODES, Mode, DEFAULT_MODE } from "@/lib/config";
 import { STRATEGIES, StrategyId, computeStrategy } from "@/lib/strategies";
 import SessionClock from "@/components/SessionClock";
+import QqeSubChart from "@/components/QqeSubChart";
 
 export default function ChartClient({ symbol }: { symbol: string }) {
   const [tf, setTf] = useState<TF>("H1");
@@ -27,7 +28,7 @@ export default function ChartClient({ symbol }: { symbol: string }) {
     try {
       const [cr, ar] = await Promise.all([
         fetch(`/api/candles?symbol=${symbol}&tf=${tf}`),
-        fetch(`/api/analysis?symbol=${symbol}&tf=${tf}&balance=${settings.balance}&risk=${settings.riskPct}`),
+        fetch(`/api/analysis?symbol=${symbol}&tf=${tf}&balance=${settings.balance}&risk=${settings.riskPct}&momentum=${settings.momentum}`),
       ]);
       const cj = await cr.json();
       const aj = await ar.json();
@@ -38,7 +39,7 @@ export default function ChartClient({ symbol }: { symbol: string }) {
     } catch (e: any) {
       setErr(e.message || "gagal memuat");
     }
-  }, [symbol, tf, settings.balance, settings.riskPct]);
+  }, [symbol, tf, settings.balance, settings.riskPct, settings.momentum]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -92,6 +93,20 @@ export default function ChartClient({ symbol }: { symbol: string }) {
             Sumber candle: Yahoo Finance (DELAYED) · mode: {mode}
           </div>
         </div>
+
+        {strategy?.id === "skor" && candles.length > 0 && (
+          <div className="card p-3">
+            <div className="flex items-center justify-between px-2 pb-1">
+              <span className="text-[12px] font-semibold text-neutral-500">QQE Mod (sub-chart)</span>
+              {analysis?.hvi && analysis.hvi.regime !== "-" && (
+                <span className="badge badge-delayed">
+                  HVI {analysis.hvi.value != null ? analysis.hvi.value.toFixed(2) : "—"} · {analysis.hvi.regime}
+                </span>
+              )}
+            </div>
+            <QqeSubChart symbol={symbol} tf={tf} />
+          </div>
+        )}
 
         {strategy && strategy.id === "skor" && analysis && <AnalysisPanel a={analysis} balance={settings.balance} riskPct={settings.riskPct} />}
         {strategy && strategy.id !== "skor" && <StrategyPanel r={strategy} balance={settings.balance} riskPct={settings.riskPct} />}

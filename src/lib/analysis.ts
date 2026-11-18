@@ -1,10 +1,13 @@
 import { CONTRACT, MIN_LOT, PAIRS, pairOf, TF } from "./config";
-import { atr, computePivot, dailyVwap, ema, macd, rsi } from "./indicators";
+import { atr, computePivot, dailyVwap, ema, hviValue, macd, qqe, rsi } from "./indicators";
 import { Candle, fetchYahooCandles } from "./market";
+
+export type MomentumSource = "qqe" | "macd" | "both";
 
 export interface AnalysisInput {
   balance: number;
   riskPct: number;
+  momentum?: MomentumSource;
 }
 
 /** waktu WIB (UTC+7) */
@@ -53,6 +56,18 @@ export interface AnalysisResult {
   strong: boolean;
   session: string;
   kill: string | null;
+  momentumSource: MomentumSource;
+  qqe: {
+    val1: number;
+    line1: number;
+    up1: boolean;
+    val2: number;
+    line2: number;
+    up2: boolean;
+    state: "bull" | "bear" | "mixed";
+  };
+  hvi: { value: number | null; regime: string };
+  momentum: { source: MomentumSource; qqeState: "bull" | "bear" | "mixed"; macdPos: boolean | null; buy: number; sell: number };
   trade?: {
     entry: number;
     sl: number;
@@ -96,6 +111,17 @@ export async function computeAnalysis(
   const atrV = lastVal(atrA);
   const macdOut = macd(closes);
   const macdHist = lastVal(macdOut.hist);
+  const q1 = qqe(closes, 6, 5, 3.0);
+  const q2 = qqe(closes, 6, 5, 1.61);
+  const n = closes.length;
+  const up1 = !!q1.up[n - 1], up2 = !!q2.up[n - 1];
+  const qqeState: "bull" | "bear" | "mixed" =
+    up1 && up2 ? "bull" : !up1 && !up2 ? "bear" : "mixed";
+  const qqeVal = (a: (number | null)[]) => {
+    const v = a[n - 1];
+    return Number.isFinite(v as number) ? (v as number) : 0;
+  };
+  const hvi = hviValue(closes);
   const vwapArr = dailyVwap(chartCandles);
   const vwapV = lastVal(vwapArr);
   const pivot = computePivot(d1Candles);
@@ -126,9 +152,33 @@ export async function computeAnalysis(
   // 4. RSI +15
   check(rsiV != null && rsiV! >= 50 && rsiV! <= 70, 15, "buy");
   check(rsiV != null && rsiV! >= 30 && rsiV! <= 50, 15, "sell");
-  // 5. MACD +15
-  check(macdHist != null && macdHist! > 0, 15, "buy");
-  check(macdHist != null && macdHist! < 0, 15, "sell");
+  // 5. Momentum +15 (sesuai sumber terpilih)
+  const source = input.momentum ?? "qqe";
+  const macdPos = macdHist != null && macdHist > 0;
+  const macdNeg = macdHist != null && macdHist < 0;
+  let mBuy = 0, mSell = 0;
+  if (source === "qqe") {
+    if (qqeState === "bull") mBuy = 15;
+    else if (qqeState === "bear") mSell = 15;
+    else if (up1) mBuy = 7;
+    else mSell = 7;
+  } else if (source === "macd") {
+    if (macdPos) mBuy = 15;
+    else if (macdNeg) mSell = 15;
+  } else {
+    const qDir = qqeState === "bull" ? "buy" : qqeState === "bear" ? "sell" : up1 ? "buy" : "sell";
+    const mdDir = macdPos ? "buy" : macdNeg ? "sell" : null;
+    if (qDir && mdDir) {
+      if (qDir === mdDir) { if (qDir === "buy") mBuy = 15; else mSell = 15; }
+      // berlawanan semua -> 0
+    } else if (qDir) {
+      if (qDir === "buy") mBuy = 7; else mSell = 7;
+    } else if (mdDir) {
+      if (mdDir === "buy") mBuy = 7; else mSell = 7;
+    }
+  }
+  scoreBuy += mBuy;
+  scoreSell += mSell;
   // 6. lokasi +15 (pullback EMA20) / break high-low +10
   if (chartUp && e20 != null) {
     const pullback = Math.abs(price - e20!) / price < 0.003; // dekat EMA20
@@ -180,6 +230,14 @@ export async function computeAnalysis(
     strong,
     session: sessionLabel(hm),
     kill,
+    momentumSource: source,
+    qqe: {
+      val1: qqeVal(q1.val), line1: qqeVal(q1.line), up1,
+      val2: qqeVal(q2.val), line2: qqeVal(q2.line), up2,
+      state: qqeState,
+    },
+    hvi,
+    momentum: { source, qqeState, macdPos, buy: mBuy, sell: mSell },
   };
 
   if (strong && atrV && atrV > 0) {
