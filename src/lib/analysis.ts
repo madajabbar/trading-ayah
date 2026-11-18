@@ -38,6 +38,7 @@ const direction = (e20: number | null, e50: number | null): "up" | "down" | null
 export interface AnalysisResult {
   symbol: string;
   tf: TF;
+  source: string;
   price: number;
   atr: number;
   rsi: number;
@@ -165,6 +166,7 @@ export async function computeAnalysis(
   const result: AnalysisResult = {
     symbol,
     tf,
+    source: "yahoo",
     price,
     atr: atrV ?? 0,
     rsi: rsiV ?? 0,

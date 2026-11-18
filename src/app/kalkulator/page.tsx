@@ -29,7 +29,7 @@ export default function KalkulatorPage() {
         <h1 className="h1">Kalkulator Lot</h1>
 
         <div className="card p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label className="space-y-1">
               <span className="text-sm text-neutral-500">Pair</span>
               <select value={symbol} onChange={(e) => setSymbol(e.target.value)}>
@@ -44,7 +44,7 @@ export default function KalkulatorPage() {
               </select>
             </label>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <label className="space-y-1">
               <span className="text-sm text-neutral-500">Saldo (Rp)</span>
               <input type="number" value={balance} onChange={(e) => setBalance(Number(e.target.value))} />
@@ -58,7 +58,7 @@ export default function KalkulatorPage() {
               <input value={fmtNum(factor, 0)} disabled />
             </label>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <label className="space-y-1">
               <span className="text-sm text-neutral-500">Entry</span>
               <input type="number" step="0.01" value={entry} onChange={(e) => setEntry(Number(e.target.value))} />
